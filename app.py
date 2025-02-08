@@ -6,6 +6,11 @@ import pickle
 import statistics
 import joblib
 import numpy as np
+from googletrans import Translator, LANGUAGES
+from werkzeug.exceptions import BadRequest
+import asyncio
+import nest_asyncio
+
 
 # Flask constructor takes the name of 
 # current module (__name__) as argument.
@@ -150,6 +155,38 @@ def predict_disease():
 
 
 
+
+
+translator = Translator()
+nest_asyncio.apply()
+
+@app.route('/translate', methods=['POST'])
+def translate_text():
+    """
+    Translate text to a specified target language.
+    """
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        text = data['text']
+        target_lang = data['target_language'].lower()
+        # from_lang = data.get('source', 'auto').lower()
+
+        # Run the coroutine using asyncio
+        translation = asyncio.run(translator.translate(text, dest=target_lang))
+        print("dd",translation)
+        # Prepare response
+        response = {
+            'translated_text': translation.text,
+            'source_language': translation.src,
+            'target_language': translation.dest
+        }
+        return jsonify(response), 200
+
+    except BadRequest as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Main driver function
 if __name__ == '__main__':
